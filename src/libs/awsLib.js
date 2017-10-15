@@ -32,3 +32,11 @@ function getCurrentUser() {
   });
   return userPool.getCurrentUser();
 }
+
+export function signOutUser() {
+  const currentUser = getCurrentUser();
+
+  if (currentUser !== null) {
+    currentUser.signOut();
+  }
+}
