@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import { CognitoUserPool, AuthenticationDetails, CognitoUser } from 'amazon-cognito-identity-js';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import LoaderButton from '../components/LoaderButton';
-import './Login.css';
 import config from '../config';
+import './Login.css';
 
 export default class Login extends Component {
   constructor(props) {
@@ -22,7 +22,8 @@ export default class Login extends Component {
       ClientId: config.cognito.APP_CLIENT_ID,
     });
     const user = new CognitoUser({ Username: email, Pool: userPool });
-    const authenticationDetails = new AuthenticationDetails({ Username: email, Password: password });
+    const authenticationData = { Username: email, Password: password };
+    const authenticationDetails = new AuthenticationDetails(authenticationData);
 
     return new Promise((resolve, reject) =>
       user.authenticateUser(authenticationDetails, {
@@ -50,9 +51,8 @@ export default class Login extends Component {
     try {
       await this.login(this.state.email, this.state.password);
       this.props.userHasAuthenticated(true);
-      this.props.history.push('/');
-    } catch (err) {
-      alert(err);
+    } catch (e) {
+      alert(e);
       this.setState({ isLoading: false });
     }
   };

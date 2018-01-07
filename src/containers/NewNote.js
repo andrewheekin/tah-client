@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import LoaderButton from '../components/LoaderButton';
+import { invokeApig, s3Upload } from '../libs/awsLib';
 import config from '../config';
 import './NewNote.css';
 
@@ -18,6 +19,14 @@ export default class NewNote extends Component {
 
   validateForm() {
     return this.state.content.length > 0;
+  }
+
+  createNote(note) {
+    return invokeApig({
+      path: '/notes',
+      method: 'POST',
+      body: note,
+    });
   }
 
   handleChange = event => {
@@ -39,6 +48,19 @@ export default class NewNote extends Component {
     }
 
     this.setState({ isLoading: true });
+
+    try {
+      const uploadedFilename = this.file ? (await s3Upload(this.file)).Location : null;
+
+      await this.createNote({
+        content: this.state.content,
+        attachment: uploadedFilename,
+      });
+      this.props.history.push('/');
+    } catch (e) {
+      alert(e);
+      this.setState({ isLoading: false });
+    }
   };
 
   render() {
