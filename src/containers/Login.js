@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { CognitoUserPool, AuthenticationDetails, CognitoUser } from 'amazon-cognito-identity-js';
-import { FormGroup, FormControl, ControlLabel } from "react-bootstrap";
-import LoaderButton from "../components/LoaderButton";
+import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
+import LoaderButton from '../components/LoaderButton';
 import './Login.css';
 import config from '../config';
 
