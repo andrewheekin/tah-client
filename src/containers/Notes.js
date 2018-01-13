@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import LoaderButton from '../components/LoaderButton';
+// why isn't this import working without 'index' below ...?
+import RichEditor from '../components/RichEditor/index';
 import { invokeApig, s3Upload } from '../libs/awsLib';
 import config from '../config';
 import './Notes.css';
@@ -123,7 +125,8 @@ export default class Notes extends Component {
         {this.state.note && (
           <form onSubmit={this.handleSubmit}>
             <FormGroup controlId="content">
-              <FormControl onChange={this.handleChange} value={this.state.content} componentClass="textarea" />
+              {/* <FormControl onChange={this.handleChange} value={this.state.content} componentClass="textarea" /> */}
+              <RichEditor />
             </FormGroup>
             {this.state.note.attachment && (
               <FormGroup>
