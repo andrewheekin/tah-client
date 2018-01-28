@@ -1,8 +1,7 @@
 import React, { Component } from 'react';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import LoaderButton from '../components/LoaderButton';
-// why isn't this import working without 'index' below ...?
-import RichEditor from '../components/RichEditor/index';
+import RichEditor from '../components/RichEditor';
 import { invokeApig, s3Upload } from '../libs/awsLib';
 import config from '../config';
 import './Notes.css';
@@ -18,6 +17,7 @@ export default class Notes extends Component {
       isDeleting: null,
       note: null,
       content: '',
+      editing: false,
     };
   }
 
@@ -99,6 +99,10 @@ export default class Notes extends Component {
     }
   };
 
+  handleClickEdit = () => {
+    this.setState({ editing: !this.state.editing });
+  };
+
   handleDelete = async event => {
     event.preventDefault();
 
@@ -120,13 +124,14 @@ export default class Notes extends Component {
   };
 
   render() {
+    const { editing } = this.state;
     return (
       <div className="Notes">
         {this.state.note && (
           <form onSubmit={this.handleSubmit}>
             <FormGroup controlId="content">
               {/* <FormControl onChange={this.handleChange} value={this.state.content} componentClass="textarea" /> */}
-              <RichEditor />
+              <RichEditor isReadOnly={!editing} />
             </FormGroup>
             {this.state.note.attachment && (
               <FormGroup>
@@ -147,9 +152,9 @@ export default class Notes extends Component {
               bsStyle="primary"
               bsSize="large"
               disabled={!this.validateForm()}
-              type="submit"
               isLoading={this.state.isLoading}
-              text="Save"
+              onClick={this.handleClickEdit}
+              text={editing ? 'Save' : 'Edit'}
               loadingText="Saving…"
             />
             <LoaderButton
