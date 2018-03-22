@@ -9,28 +9,23 @@ import config from '../config';
 import './Notes.css';
 
 export default class Notes extends Component {
-  constructor(props) {
-    super(props);
-
-    this.file = null;
-
-    this.state = {
-      isLoading: null,
-      isDeleting: null,
-      note: null,
-      content: EditorState.createEmpty(),
-      editing: false,
-    };
-  }
+  state = {
+    isLoading: null,
+    isDeleting: null,
+    note: null,
+    initialState: EditorState.createEmpty(),
+    editing: false,
+    file: null,
+  };
 
   async componentDidMount() {
     try {
       const note = await this.getNote();
       let { content } = note;
-      content = content
+      const initialState = content
         ? EditorState.createWithContent(convertFromRaw(JSON.parse(content)))
         : EditorState.createEmpty();
-      this.setState({ note, content });
+      this.setState({ note, initialState });
     } catch (e) {
       alert(e);
     }
@@ -59,18 +54,19 @@ export default class Notes extends Component {
     return str.length < 50 ? str : str.substr(0, 20) + '...' + str.substr(str.length - 20, str.length);
   }
 
-  saveChange = debounce(async content => {
-    content = JSON.stringify(convertToRaw(content));
+  saveChange = debounce(async editorState => {
+    // only stringify and convert to raw when saving to dynamo
+    const content = JSON.stringify(convertToRaw(editorState));
 
     let uploadedFilename;
 
-    if (this.file && this.file.size > config.MAX_ATTACHMENT_SIZE) return alert('Please pick a file smaller than 5MB');
+    if (this.state.file && this.state.file.size > config.MAX_ATTACHMENT_SIZE) return alert('Please pick a file smaller than 5MB');
 
     this.setState({ isLoading: true });
 
     try {
-      if (this.file) {
-        uploadedFilename = (await s3Upload(this.file)).Location;
+      if (this.state.file) {
+        uploadedFilename = (await s3Upload(this.state.file)).Location;
       }
 
       await this.saveNote({
@@ -85,7 +81,7 @@ export default class Notes extends Component {
   }, 1000);
 
   handleFileChange = event => {
-    this.file = event.target.files[0];
+    this.setState({ file: event.target.files[0] });
   };
 
   handleClickEdit = () => {
@@ -113,13 +109,13 @@ export default class Notes extends Component {
   };
 
   render() {
-    const { editing, content } = this.state;
+    const { editing, initialState } = this.state;
     return (
       <div className="Notes">
         {this.state.note && (
           <form>
             <FormGroup controlId="content">
-              <RichEditor isReadOnly={!editing} saveChange={this.saveChange} content={content} />
+              <RichEditor isReadOnly={!editing} saveChange={this.saveChange} initialState={initialState} />
             </FormGroup>
             {this.state.note.attachment && (
               <FormGroup>

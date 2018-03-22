@@ -7,11 +7,11 @@ import './Draft.css';
 class RichEditor extends React.Component {
   static propTypes = {
     isReadOnly: PropTypes.bool.isRequired,
-    content: PropTypes.object.isRequired,
+    initialState: PropTypes.object.isRequired,
     saveChange: PropTypes.func.isRequired,
   };
 
-  state = { editorState: this.props.content };
+  state = { editorState: this.props.initialState };
 
   focus = () => this.editor.focus();
 
@@ -26,7 +26,7 @@ class RichEditor extends React.Component {
   };
 
   onChange = editorState => {
-    let content = editorState.getCurrentContent();
+    const content = editorState.getCurrentContent();
     this.props.saveChange(content);
     this.setState({ editorState });
   };
@@ -46,6 +46,7 @@ class RichEditor extends React.Component {
 
   render() {
     const { editorState } = this.state;
+    console.log('editorstate in rich', editorState)
     const { isReadOnly } = this.props;
 
     // If the user changes block type before entering any text, we can
@@ -65,8 +66,6 @@ class RichEditor extends React.Component {
 
     let rootClass;
     if (!isReadOnly) rootClass = 'RichEditor-root';
-
-    console.log('content state', convertToRaw(contentState));
 
     return (
       <div className={rootClass}>
@@ -150,8 +149,7 @@ const BLOCK_TYPES = [
   { label: 'Code Block', style: 'code-block' },
 ];
 
-const BlockStyleControls = props => {
-  const { editorState } = props;
+const BlockStyleControls = ({ editorState, onToggle }) => {
   const selection = editorState.getSelection();
   const blockType = editorState
     .getCurrentContent()
@@ -165,7 +163,7 @@ const BlockStyleControls = props => {
           key={type.label}
           active={type.style === blockType}
           label={type.label}
-          onToggle={props.onToggle}
+          onToggle={onToggle}
           style={type.style}
         />
       ))}
@@ -180,8 +178,8 @@ const INLINE_STYLES = [
   { label: 'Monospace', style: 'CODE' },
 ];
 
-const InlineStyleControls = props => {
-  const currentStyle = props.editorState.getCurrentInlineStyle();
+const InlineStyleControls = ({ editorState, onToggle }) => {
+  const currentStyle = editorState.getCurrentInlineStyle();
   return (
     <div className="RichEditor-controls">
       {INLINE_STYLES.map(type => (
@@ -189,7 +187,7 @@ const InlineStyleControls = props => {
           key={type.label}
           active={currentStyle.has(type.style)}
           label={type.label}
-          onToggle={props.onToggle}
+          onToggle={onToggle}
           style={type.style}
         />
       ))}

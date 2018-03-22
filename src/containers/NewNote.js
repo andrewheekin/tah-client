@@ -12,7 +12,7 @@ export default class NewNote extends Component {
   state = {
     isLoading: null,
     isCreating: false,
-    content: EditorState.createEmpty(),
+    initialState: EditorState.createEmpty(),
     editing: false,
     file: null,
   };
@@ -25,14 +25,14 @@ export default class NewNote extends Component {
     this.setState({ file: event.target.files[0] });
   };
 
-  saveChange = debounce(async content => {
-    this.setState({ content });
+  saveChange = debounce(async initialState => {
+    this.setState({ initialState });
   }, 1000);
 
   handleSubmit = async event => {
     this.setState({ isCreating: true });
     event.preventDefault();
-    const content = JSON.stringify(convertToRaw(this.state.content));
+    const content = JSON.stringify(convertToRaw(this.state.initialState));
 
     if (this.state.file && this.state.file.size > config.MAX_ATTACHMENT_SIZE) {
       alert('Please pick a file smaller than 5MB');
@@ -66,13 +66,12 @@ export default class NewNote extends Component {
   }
 
   render() {
-    const { editing, content } = this.state;
-    console.log('cont in nn', content);
+    const { editing, initialState } = this.state;
     return (
       <div className="NewNote">
         <form>
           <FormGroup controlId="content">
-            <RichEditor isReadOnly={!editing} saveChange={this.saveChange} content={content} />
+            <RichEditor isReadOnly={!editing} saveChange={this.saveChange} initialState={initialState} />
           </FormGroup>
           <FormGroup controlId="file">
             <ControlLabel>Attachment</ControlLabel>
