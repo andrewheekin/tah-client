@@ -1,5 +1,7 @@
 import React, { Component } from 'react';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
+import debounce from 'lodash.debounce';
+import { Editor, EditorState, RichUtils, convertToRaw, convertFromRaw } from 'draft-js';
 import LoaderButton from '../components/LoaderButton';
 import RichEditor from '../components/RichEditor';
 import { invokeApig, s3Upload } from '../libs/awsLib';
@@ -16,18 +18,19 @@ export default class Notes extends Component {
       isLoading: null,
       isDeleting: null,
       note: null,
-      content: '',
+      content: EditorState.createEmpty(),
       editing: false,
     };
   }
 
   async componentDidMount() {
     try {
-      const results = await this.getNote();
-      this.setState({
-        note: results,
-        content: results.content,
-      });
+      const note = await this.getNote();
+      let { content } = note;
+      content = content
+        ? EditorState.createWithContent(convertFromRaw(JSON.parse(content)))
+        : EditorState.createEmpty();
+      this.setState({ note, content });
     } catch (e) {
       alert(e);
     }
@@ -52,33 +55,16 @@ export default class Notes extends Component {
     });
   }
 
-  validateForm() {
-    return this.state.content.length > 0;
-  }
-
   formatFilename(str) {
     return str.length < 50 ? str : str.substr(0, 20) + '...' + str.substr(str.length - 20, str.length);
   }
 
-  handleChange = event => {
-    this.setState({
-      [event.target.id]: event.target.value,
-    });
-  };
+  saveChange = debounce(async content => {
+    content = JSON.stringify(convertToRaw(content));
 
-  handleFileChange = event => {
-    this.file = event.target.files[0];
-  };
-
-  handleSubmit = async event => {
     let uploadedFilename;
 
-    event.preventDefault();
-
-    if (this.file && this.file.size > config.MAX_ATTACHMENT_SIZE) {
-      alert('Please pick a file smaller than 5MB');
-      return;
-    }
+    if (this.file && this.file.size > config.MAX_ATTACHMENT_SIZE) return alert('Please pick a file smaller than 5MB');
 
     this.setState({ isLoading: true });
 
@@ -89,14 +75,17 @@ export default class Notes extends Component {
 
       await this.saveNote({
         ...this.state.note,
-        content: this.state.content,
+        content,
         attachment: uploadedFilename || this.state.note.attachment,
       });
-      this.props.history.push('/');
     } catch (e) {
       alert(e);
-      this.setState({ isLoading: false });
     }
+    this.setState({ isLoading: false });
+  }, 1000);
+
+  handleFileChange = event => {
+    this.file = event.target.files[0];
   };
 
   handleClickEdit = () => {
@@ -124,14 +113,13 @@ export default class Notes extends Component {
   };
 
   render() {
-    const { editing } = this.state;
+    const { editing, content } = this.state;
     return (
       <div className="Notes">
         {this.state.note && (
-          <form onSubmit={this.handleSubmit}>
+          <form>
             <FormGroup controlId="content">
-              {/* <FormControl onChange={this.handleChange} value={this.state.content} componentClass="textarea" /> */}
-              <RichEditor isReadOnly={!editing} />
+              <RichEditor isReadOnly={!editing} saveChange={this.saveChange} content={content} />
             </FormGroup>
             {this.state.note.attachment && (
               <FormGroup>
@@ -151,10 +139,9 @@ export default class Notes extends Component {
               block
               bsStyle="primary"
               bsSize="large"
-              disabled={!this.validateForm()}
               isLoading={this.state.isLoading}
               onClick={this.handleClickEdit}
-              text={editing ? 'Save' : 'Edit'}
+              text={editing ? 'Finish' : 'Edit'}
               loadingText="Saving…"
             />
             <LoaderButton

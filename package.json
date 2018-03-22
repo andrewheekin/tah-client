@@ -7,12 +7,14 @@
     "aws-sdk": "^2.133.0",
     "crypto-js": "^3.1.9-1",
     "draft-js": "^0.10.4",
+    "lodash.debounce": "^4.0.8",
     "prop-types": "^15.6.0",
     "react": "^16.0.0",
     "react-bootstrap": "^0.31.3",
     "react-dom": "^16.0.0",
     "react-router-dom": "^4.2.2",
-    "react-scripts": "1.0.14"
+    "react-scripts": "1.0.14",
+    "styled-components": "^3.2.2"
   },
   "scripts": {
     "start": "react-scripts start",

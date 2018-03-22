@@ -1,25 +1,61 @@
 import React, { Component } from 'react';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
+import debounce from 'lodash.debounce';
+import { EditorState, convertToRaw } from 'draft-js';
+import RichEditor from '../components/RichEditor';
 import LoaderButton from '../components/LoaderButton';
 import { invokeApig, s3Upload } from '../libs/awsLib';
 import config from '../config';
 import './NewNote.css';
 
 export default class NewNote extends Component {
-  constructor(props) {
-    super(props);
+  state = {
+    isLoading: null,
+    isCreating: false,
+    content: EditorState.createEmpty(),
+    editing: false,
+    file: null,
+  };
 
-    this.file = null;
+  handleClickEdit = () => {
+    this.setState({ editing: !this.state.editing });
+  };
 
-    this.state = {
-      isLoading: null,
-      content: '',
-    };
-  }
+  handleFileChange = event => {
+    this.setState({ file: event.target.files[0] });
+  };
 
-  validateForm() {
-    return this.state.content.length > 0;
-  }
+  saveChange = debounce(async content => {
+    this.setState({ content });
+  }, 1000);
+
+  handleSubmit = async event => {
+    this.setState({ isCreating: true });
+    event.preventDefault();
+    const content = JSON.stringify(convertToRaw(this.state.content));
+
+    if (this.state.file && this.state.file.size > config.MAX_ATTACHMENT_SIZE) {
+      alert('Please pick a file smaller than 5MB');
+      return;
+    }
+
+    this.setState({ isLoading: true });
+
+    try {
+      const uploadedFilename = this.state.file ? (await s3Upload(this.state.file)).Location : null;
+
+      await this.createNote({
+        content,
+        attachment: uploadedFilename,
+      });
+      this.props.history.push('/');
+    } catch (e) {
+      alert(e);
+    } finally {
+      this.setState({ isLoading: false });
+      this.setState({ isCreating: false });
+    }
+  };
 
   createNote(note) {
     return invokeApig({
@@ -29,46 +65,14 @@ export default class NewNote extends Component {
     });
   }
 
-  handleChange = event => {
-    this.setState({
-      [event.target.id]: event.target.value,
-    });
-  };
-
-  handleFileChange = event => {
-    this.file = event.target.files[0];
-  };
-
-  handleSubmit = async event => {
-    event.preventDefault();
-
-    if (this.file && this.file.size > config.MAX_ATTACHMENT_SIZE) {
-      alert('Please pick a file smaller than 5MB');
-      return;
-    }
-
-    this.setState({ isLoading: true });
-
-    try {
-      const uploadedFilename = this.file ? (await s3Upload(this.file)).Location : null;
-
-      await this.createNote({
-        content: this.state.content,
-        attachment: uploadedFilename,
-      });
-      this.props.history.push('/');
-    } catch (e) {
-      alert(e);
-      this.setState({ isLoading: false });
-    }
-  };
-
   render() {
+    const { editing, content } = this.state;
+    console.log('cont in nn', content);
     return (
       <div className="NewNote">
-        <form onSubmit={this.handleSubmit}>
+        <form>
           <FormGroup controlId="content">
-            <FormControl onChange={this.handleChange} value={this.state.content} componentClass="textarea" />
+            <RichEditor isReadOnly={!editing} saveChange={this.saveChange} content={content} />
           </FormGroup>
           <FormGroup controlId="file">
             <ControlLabel>Attachment</ControlLabel>
@@ -78,11 +82,19 @@ export default class NewNote extends Component {
             block
             bsStyle="primary"
             bsSize="large"
-            disabled={!this.validateForm()}
-            type="submit"
             isLoading={this.state.isLoading}
-            text="Create"
-            loadingText="Creating…"
+            onClick={this.handleClickEdit}
+            text={editing ? 'Save' : 'Edit'}
+            loadingText="Saving…"
+          />
+          <LoaderButton
+            block
+            bsStyle="primary"
+            bsSize="large"
+            isLoading={this.state.isCreating}
+            onClick={this.handleSubmit}
+            text={'Create!'}
+            loadingText="Creating..."
           />
         </form>
       </div>

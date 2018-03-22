@@ -6,52 +6,42 @@ import './Draft.css';
 
 class RichEditor extends React.Component {
   static propTypes = {
-    isReadOnly: PropTypes.bool,
+    isReadOnly: PropTypes.bool.isRequired,
+    content: PropTypes.object.isRequired,
+    saveChange: PropTypes.func.isRequired,
   };
-  constructor(props) {
-    super(props);
-    this.state = { editorState: EditorState.createEmpty() };
 
-    const content = window.localStorage.getItem('content');
-
-    if (content) {
-      this.state.editorState = EditorState.createWithContent(convertFromRaw(JSON.parse(content)));
-      // this.setState({ editorState: EditorState.createWithContent(convertFromRaw(JSON.parse(content))) });
-    } else {
-      this.state.editorState = EditorState.createEmpty();
-      // this.setState({ editorState: EditorState.createEmpty() });
-    }
-  }
+  state = { editorState: this.props.content };
 
   focus = () => this.editor.focus();
-
-  onChange = editorState => {
-    const content = editorState.getCurrentContent();
-    window.localStorage.setItem('content', JSON.stringify(convertToRaw(content)));
-    this.setState({ editorState });
-  };
 
   handleKeyCommand = command => {
     const { editorState } = this.state;
     const newState = RichUtils.handleKeyCommand(editorState, command);
     if (newState) {
-      this.onChange(newState);
+      this.setState({ editorState: newState });
       return true;
     }
     return false;
   };
 
+  onChange = editorState => {
+    let content = editorState.getCurrentContent();
+    this.props.saveChange(content);
+    this.setState({ editorState });
+  };
+
   onTab = e => {
     const maxDepth = 4;
-    this.onChange(RichUtils.onTab(e, this.state.editorState, maxDepth));
+    this.setState({ editorState: RichUtils.onTab(e, this.state.editorState, maxDepth) });
   };
 
   toggleBlockType = blockType => {
-    this.onChange(RichUtils.toggleBlockType(this.state.editorState, blockType));
+    this.setState({ editorState: RichUtils.toggleBlockType(this.state.editorState, blockType) });
   };
 
   toggleInlineStyle = inlineStyle => {
-    this.onChange(RichUtils.toggleInlineStyle(this.state.editorState, inlineStyle));
+    this.setState({ editorState: RichUtils.toggleInlineStyle(this.state.editorState, inlineStyle) });
   };
 
   render() {
@@ -62,7 +52,7 @@ class RichEditor extends React.Component {
     // either style the placeholder or hide it. Let's just hide it now.
     let className = 'RichEditor-editor';
     if (!isReadOnly) className += ' RichEditor-topborder';
-    var contentState = editorState.getCurrentContent();
+    const contentState = editorState.getCurrentContent();
     if (
       !contentState.hasText() &&
       contentState
@@ -183,7 +173,7 @@ const BlockStyleControls = props => {
   );
 };
 
-var INLINE_STYLES = [
+const INLINE_STYLES = [
   { label: 'Bold', style: 'BOLD' },
   { label: 'Italic', style: 'ITALIC' },
   { label: 'Underline', style: 'UNDERLINE' },
@@ -191,7 +181,7 @@ var INLINE_STYLES = [
 ];
 
 const InlineStyleControls = props => {
-  var currentStyle = props.editorState.getCurrentInlineStyle();
+  const currentStyle = props.editorState.getCurrentInlineStyle();
   return (
     <div className="RichEditor-controls">
       {INLINE_STYLES.map(type => (

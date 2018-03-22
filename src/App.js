@@ -1,12 +1,21 @@
-import React, { Component } from 'react';
-import { Link, withRouter } from 'react-router-dom';
+import React from 'react';
+import { Route, Switch, Link, withRouter } from 'react-router-dom';
 import { Nav, NavItem, Navbar } from 'react-bootstrap';
-import Routes from './Routes';
 import { authUser, signOutUser } from './libs/awsLib';
 import RouteNavItem from './components/RouteNavItem';
+import AppliedRoute from './components/AppliedRoute';
+import AuthenticatedRoute from './components/AuthenticatedRoute';
+import UnauthenticatedRoute from './components/UnauthenticatedRoute';
+import Home from './containers/Home';
+import Login from './containers/Login';
+import Notes from './containers/Notes';
+import Signup from './containers/Signup';
+import NewNote from './containers/NewNote';
+import NotFound from './containers/NotFound';
 import './App.css';
 
-class App extends Component {
+
+class App extends React.Component {
   constructor(props) {
     super(props);
 
@@ -41,7 +50,7 @@ class App extends Component {
   };
 
   render() {
-    const childProps = {
+    const authStatus = {
       isAuthenticated: this.state.isAuthenticated,
       userHasAuthenticated: this.userHasAuthenticated,
     };
@@ -49,31 +58,30 @@ class App extends Component {
     return (
       !this.state.isAuthenticating && (
         <div className="App container">
-          <Navbar fluid collapseOnSelect>
-            <Navbar.Header>
-              <Navbar.Brand>
-                <Link to="/">Scratch</Link>
-              </Navbar.Brand>
-              <Navbar.Toggle />
-            </Navbar.Header>
-            <Navbar.Collapse>
-              <Nav pullRight>
-                {this.state.isAuthenticated ? (
-                  <NavItem onClick={this.handleLogout}>Logout</NavItem>
-                ) : (
-                  [
-                    <RouteNavItem key={1} href="/signup">
-                      Signup
-                    </RouteNavItem>,
-                    <RouteNavItem key={2} href="/login">
-                      Login
-                    </RouteNavItem>,
-                  ]
-                )}
-              </Nav>
-            </Navbar.Collapse>
-          </Navbar>
-          <Routes childProps={childProps} />
+          <Link to="/">Scratch</Link>
+          <Nav pullRight>
+            {this.state.isAuthenticated ? (
+              <NavItem onClick={this.handleLogout}>Logout</NavItem>
+            ) : (
+              [
+                <RouteNavItem key={1} href="/signup">
+                  Signup
+                </RouteNavItem>,
+                <RouteNavItem key={2} href="/login">
+                  Login
+                </RouteNavItem>,
+              ]
+            )}
+          </Nav>
+          <Switch>
+            <AppliedRoute path="/" exact component={Home} props={authStatus} />
+            <UnauthenticatedRoute path="/login" exact component={Login} props={authStatus} />
+            <UnauthenticatedRoute path="/signup" exact component={Signup} props={authStatus} />
+            <AuthenticatedRoute path="/notes/new" exact component={NewNote} props={authStatus} />
+            <AuthenticatedRoute path="/notes/:id" exact component={Notes} props={authStatus} />
+            {/* Finally, catch all unmatched routes */}
+            <Route component={NotFound} />
+          </Switch>
         </div>
       )
     );
