@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
 import { Link } from 'react-router-dom';
+import { API } from 'aws-amplify';
 import { PageHeader, ListGroup, ListGroupItem } from 'react-bootstrap';
 import styled from 'styled-components';
-import { invokeApig } from '../libs/awsLib';
 
 const Container = styled.div`
   padding: 80px 0;
@@ -23,7 +23,7 @@ export default class Home extends Component {
     if (!this.props.isAuthenticated) return;
 
     try {
-      const results = await invokeApig({ path: '/notes' });
+      const results = await API.get('notes', '/notes');
       this.setState({ notes: results });
     } catch (e) {
       alert(e);

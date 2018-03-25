@@ -1,6 +1,6 @@
 import React from 'react';
 import { Route, Switch, Link, withRouter } from 'react-router-dom';
-import { authUser, signOutUser } from './libs/awsLib';
+import { Auth } from 'aws-amplify';
 import AppliedRoute from './components/AppliedRoute';
 import AuthenticatedRoute from './components/AuthenticatedRoute';
 import UnauthenticatedRoute from './components/UnauthenticatedRoute';
@@ -13,24 +13,17 @@ import NotFound from './containers/NotFound';
 import './App.css';
 
 class App extends React.Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      isAuthenticated: false,
-      isAuthenticating: true,
-    };
-  }
+  state = {
+    isAuthenticated: false,
+    isAuthenticating: true,
+  };
 
   async componentDidMount() {
     try {
-      if (await authUser()) {
-        this.userHasAuthenticated(true);
-      }
+      if (await Auth.currentSession()) this.userHasAuthenticated(true);
     } catch (e) {
-      alert(e);
+      if (e !== 'No current user') alert(e);
     }
-
     this.setState({ isAuthenticating: false });
   }
 
@@ -38,13 +31,11 @@ class App extends React.Component {
     this.setState({ isAuthenticated: authenticated });
   };
 
-  handleLogout = event => {
-    signOutUser();
-
+  handleLogout = async event => {
+    await Auth.signOut();
     this.userHasAuthenticated(false);
-
     this.props.history.push('/login');
-  };
+  }
 
   render() {
     const authStatus = {

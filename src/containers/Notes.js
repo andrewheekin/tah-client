@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
+import { API, Storage } from 'aws-amplify';
 import styled from 'styled-components';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import debounce from 'lodash.debounce';
 import { Editor, EditorState, RichUtils, convertToRaw, convertFromRaw } from 'draft-js';
 import LoaderButton from '../components/LoaderButton';
 import RichEditor from '../components/RichEditor';
-import { invokeApig, s3Upload } from '../libs/awsLib';
+import { s3Upload } from '../libs/awsLib';
 import config from '../config';
 
 const Input = styled.input`
@@ -20,40 +21,25 @@ export default class Notes extends Component {
     note: null,
     initialState: EditorState.createEmpty(),
     tag: 'New Note',
+    attachmentURL: null,
     editing: false,
     file: null,
   };
 
   async componentDidMount() {
     try {
-      const note = await this.getNote();
-      let { content, tag } = note;
+      let attachmentURL;
+      const note = await API.get('notes', `/notes/${this.props.match.params.id}`);
+      const { content, tag, attachment } = note;
       const initialState = content
         ? EditorState.createWithContent(convertFromRaw(JSON.parse(content)))
         : EditorState.createEmpty();
-      this.setState({ note, tag, initialState });
+
+      if (attachment) attachmentURL = await Storage.vault.get(attachment);
+      this.setState({ note, tag, initialState, attachmentURL });
     } catch (e) {
       alert(e);
     }
-  }
-
-  getNote() {
-    return invokeApig({ path: `/notes/${this.props.match.params.id}` });
-  }
-
-  deleteNote() {
-    return invokeApig({
-      path: `/notes/${this.props.match.params.id}`,
-      method: 'DELETE',
-    });
-  }
-
-  saveNote(note) {
-    return invokeApig({
-      path: `/notes/${this.props.match.params.id}`,
-      method: 'PUT',
-      body: note,
-    });
   }
 
   formatFilename(str) {
@@ -64,22 +50,23 @@ export default class Notes extends Component {
     // only stringify and convert to raw when saving to dynamo
     const content = JSON.stringify(convertToRaw(editorState));
 
-    let uploadedFilename;
+    let attachment;
 
-    if (this.state.file && this.state.file.size > config.MAX_ATTACHMENT_SIZE) return alert('Please pick a file smaller than 5MB');
+    if (this.state.file && this.state.file.size > config.MAX_ATTACHMENT_SIZE)
+      return alert('Please pick a file smaller than 5MB');
 
     this.setState({ isLoading: true });
 
     try {
-      if (this.state.file) {
-        uploadedFilename = (await s3Upload(this.state.file)).Location;
-      }
+      if (this.state.file) attachment = await s3Upload(this.state.file);
 
-      await this.saveNote({
-        ...this.state.note,
-        content,
-        tag: this.state.tag,
-        attachment: uploadedFilename || this.state.note.attachment,
+      await API.put('notes', `/notes/${this.props.match.params.id}`, {
+        body: {
+          ...this.state.note,
+          content,
+          tag: this.state.tag,
+          attachment: attachment || this.state.note.attachment,
+        },
       });
     } catch (e) {
       alert(e);
@@ -89,7 +76,7 @@ export default class Notes extends Component {
 
   handleTagChange = event => {
     this.setState({ tag: event.target.value });
-  }
+  };
 
   handleFileChange = event => {
     this.setState({ file: event.target.files[0] });
@@ -105,11 +92,10 @@ export default class Notes extends Component {
     const confirmed = window.confirm('Are you sure you want to delete this note?');
 
     if (!confirmed) return;
-
     this.setState({ isDeleting: true });
 
     try {
-      await this.deleteNote();
+      await API.del('notes', `/notes/${this.props.match.params.id}`);
       this.props.history.push('/');
     } catch (e) {
       alert(e);

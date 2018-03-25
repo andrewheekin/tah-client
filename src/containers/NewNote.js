@@ -1,11 +1,12 @@
 import React, { Component } from 'react';
+import { API } from 'aws-amplify';
 import styled from 'styled-components';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import debounce from 'lodash.debounce';
 import { EditorState, convertToRaw } from 'draft-js';
 import RichEditor from '../components/RichEditor';
 import LoaderButton from '../components/LoaderButton';
-import { invokeApig, s3Upload } from '../libs/awsLib';
+import { s3Upload } from '../libs/awsLib';
 import config from '../config';
 import './NewNote.css';
 
@@ -38,7 +39,7 @@ export default class NewNote extends Component {
 
   handleTagChange = event => {
     this.setState({ tag: event.target.value });
-  }
+  };
 
   handleSubmit = async event => {
     this.setState({ isCreating: true });
@@ -53,13 +54,8 @@ export default class NewNote extends Component {
     this.setState({ isLoading: true });
 
     try {
-      const uploadedFilename = this.state.file ? (await s3Upload(this.state.file)).Location : null;
-
-      await this.createNote({
-        content,
-        tag: this.state.tag,
-        attachment: uploadedFilename,
-      });
+      const attachment = this.state.file ? await s3Upload(this.state.file) : null;
+      await API.post('notes', '/notes', { body: { content, tag: this.state.tag, attachment } });
       this.props.history.push('/');
     } catch (e) {
       alert(e);
@@ -68,14 +64,6 @@ export default class NewNote extends Component {
       this.setState({ isCreating: false });
     }
   };
-
-  createNote(note) {
-    return invokeApig({
-      path: '/notes',
-      method: 'POST',
-      body: note,
-    });
-  }
 
   render() {
     const { editing, initialState } = this.state;
