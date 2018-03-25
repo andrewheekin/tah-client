@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import styled from 'styled-components';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import debounce from 'lodash.debounce';
 import { EditorState, convertToRaw } from 'draft-js';
@@ -8,11 +9,17 @@ import { invokeApig, s3Upload } from '../libs/awsLib';
 import config from '../config';
 import './NewNote.css';
 
+const Input = styled.input`
+  border: 1px solid grey;
+  border-radius: 5px;
+`;
+
 export default class NewNote extends Component {
   state = {
     isLoading: null,
     isCreating: false,
     initialState: EditorState.createEmpty(),
+    tag: 'New Note',
     editing: false,
     file: null,
   };
@@ -28,6 +35,10 @@ export default class NewNote extends Component {
   saveChange = debounce(async initialState => {
     this.setState({ initialState });
   }, 1000);
+
+  handleTagChange = event => {
+    this.setState({ tag: event.target.value });
+  }
 
   handleSubmit = async event => {
     this.setState({ isCreating: true });
@@ -46,6 +57,7 @@ export default class NewNote extends Component {
 
       await this.createNote({
         content,
+        tag: this.state.tag,
         attachment: uploadedFilename,
       });
       this.props.history.push('/');
@@ -70,6 +82,7 @@ export default class NewNote extends Component {
     return (
       <div className="NewNote">
         <form>
+          <Input type="text" value={this.state.tag} onChange={this.handleTagChange} />
           <FormGroup controlId="content">
             <RichEditor isReadOnly={!editing} saveChange={this.saveChange} initialState={initialState} />
           </FormGroup>

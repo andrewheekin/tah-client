@@ -64,7 +64,7 @@ export default class Home extends Component {
               <div key={note.noteId} href={`/notes/${note.noteId}`} onClick={this.handleNoteClick}>
                 <div>
                   Name: {JSON.parse(note.content).blocks[0].text.trim()}, Created:{' '}
-                  {new Date(note.createdAt).toLocaleString()}
+                  {new Date(note.createdAt).toLocaleString()}, Tag: {note.tag}
                 </div>
               </div>
             ))}

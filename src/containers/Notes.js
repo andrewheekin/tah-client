@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import styled from 'styled-components';
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import debounce from 'lodash.debounce';
 import { Editor, EditorState, RichUtils, convertToRaw, convertFromRaw } from 'draft-js';
@@ -7,12 +8,18 @@ import RichEditor from '../components/RichEditor';
 import { invokeApig, s3Upload } from '../libs/awsLib';
 import config from '../config';
 
+const Input = styled.input`
+  border: 1px solid grey;
+  border-radius: 5px;
+`;
+
 export default class Notes extends Component {
   state = {
     isLoading: null,
     isDeleting: null,
     note: null,
     initialState: EditorState.createEmpty(),
+    tag: 'New Note',
     editing: false,
     file: null,
   };
@@ -20,11 +27,11 @@ export default class Notes extends Component {
   async componentDidMount() {
     try {
       const note = await this.getNote();
-      let { content } = note;
+      let { content, tag } = note;
       const initialState = content
         ? EditorState.createWithContent(convertFromRaw(JSON.parse(content)))
         : EditorState.createEmpty();
-      this.setState({ note, initialState });
+      this.setState({ note, tag, initialState });
     } catch (e) {
       alert(e);
     }
@@ -71,6 +78,7 @@ export default class Notes extends Component {
       await this.saveNote({
         ...this.state.note,
         content,
+        tag: this.state.tag,
         attachment: uploadedFilename || this.state.note.attachment,
       });
     } catch (e) {
@@ -78,6 +86,10 @@ export default class Notes extends Component {
     }
     this.setState({ isLoading: false });
   }, 1000);
+
+  handleTagChange = event => {
+    this.setState({ tag: event.target.value });
+  }
 
   handleFileChange = event => {
     this.setState({ file: event.target.files[0] });
@@ -92,9 +104,7 @@ export default class Notes extends Component {
 
     const confirmed = window.confirm('Are you sure you want to delete this note?');
 
-    if (!confirmed) {
-      return;
-    }
+    if (!confirmed) return;
 
     this.setState({ isDeleting: true });
 
@@ -113,6 +123,7 @@ export default class Notes extends Component {
       <div style={{ paddingBottom: '15px' }}>
         {this.state.note && (
           <form>
+            <Input type="text" value={this.state.tag} onChange={this.handleTagChange} />
             <FormGroup controlId="content">
               <RichEditor isReadOnly={!editing} saveChange={this.saveChange} initialState={initialState} />
             </FormGroup>
