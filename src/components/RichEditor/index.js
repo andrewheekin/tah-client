@@ -46,7 +46,6 @@ class RichEditor extends React.Component {
 
   render() {
     const { editorState } = this.state;
-    console.log('editorstate in rich', editorState)
     const { isReadOnly } = this.props;
 
     // If the user changes block type before entering any text, we can

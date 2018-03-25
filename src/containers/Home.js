@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { PageHeader, ListGroup, ListGroupItem } from 'react-bootstrap';
 import styled from 'styled-components';
 import { invokeApig } from '../libs/awsLib';
-import './Home.css';
 
 const Container = styled.div`
   padding: 80px 0;

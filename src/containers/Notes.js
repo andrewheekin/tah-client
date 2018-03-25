@@ -6,7 +6,6 @@ import LoaderButton from '../components/LoaderButton';
 import RichEditor from '../components/RichEditor';
 import { invokeApig, s3Upload } from '../libs/awsLib';
 import config from '../config';
-import './Notes.css';
 
 export default class Notes extends Component {
   state = {
@@ -111,7 +110,7 @@ export default class Notes extends Component {
   render() {
     const { editing, initialState } = this.state;
     return (
-      <div className="Notes">
+      <div style={{ paddingBottom: '15px' }}>
         {this.state.note && (
           <form>
             <FormGroup controlId="content">

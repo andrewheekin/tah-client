@@ -3,7 +3,6 @@ import { CognitoUserPool, AuthenticationDetails, CognitoUser } from 'amazon-cogn
 import { FormGroup, FormControl, ControlLabel } from 'react-bootstrap';
 import LoaderButton from '../components/LoaderButton';
 import config from '../config';
-import './Login.css';
 
 export default class Login extends Component {
   constructor(props) {
@@ -29,7 +28,7 @@ export default class Login extends Component {
       user.authenticateUser(authenticationDetails, {
         onSuccess: result => resolve(),
         onFailure: err => reject(err),
-      }),
+      })
     );
   }
 
@@ -59,8 +58,8 @@ export default class Login extends Component {
 
   render() {
     return (
-      <div className="Login">
-        <form onSubmit={this.handleSubmit}>
+      <div style={{ padding: '60px 0' }}>
+        <form onSubmit={this.handleSubmit} style={{ margin: '0 auto', maxWidth: '320px' }}>
           <FormGroup controlId="email" bsSize="large">
             <ControlLabel>Email</ControlLabel>
             <FormControl autoFocus type="email" value={this.state.email} onChange={this.handleChange} />
