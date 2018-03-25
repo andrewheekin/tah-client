@@ -1,8 +1,6 @@
 import React from 'react';
 import { Route, Switch, Link, withRouter } from 'react-router-dom';
-import { Nav, NavItem, Navbar } from 'react-bootstrap';
 import { authUser, signOutUser } from './libs/awsLib';
-import RouteNavItem from './components/RouteNavItem';
 import AppliedRoute from './components/AppliedRoute';
 import AuthenticatedRoute from './components/AuthenticatedRoute';
 import UnauthenticatedRoute from './components/UnauthenticatedRoute';
@@ -13,7 +11,6 @@ import Signup from './containers/Signup';
 import NewNote from './containers/NewNote';
 import NotFound from './containers/NotFound';
 import './App.css';
-
 
 class App extends React.Component {
   constructor(props) {
@@ -59,20 +56,14 @@ class App extends React.Component {
       !this.state.isAuthenticating && (
         <div className="App container">
           <Link to="/">Scratch</Link>
-          <Nav pullRight>
-            {this.state.isAuthenticated ? (
-              <NavItem onClick={this.handleLogout}>Logout</NavItem>
-            ) : (
-              [
-                <RouteNavItem key={1} href="/signup">
-                  Signup
-                </RouteNavItem>,
-                <RouteNavItem key={2} href="/login">
-                  Login
-                </RouteNavItem>,
-              ]
-            )}
-          </Nav>
+          {this.state.isAuthenticated ? (
+            <div onClick={this.handleLogout}>Logout</div>
+          ) : (
+            <div>
+              <Link to="/signup">Signup</Link>
+              <Link to="/login">Login</Link>
+            </div>
+          )}
           <Switch>
             <AppliedRoute path="/" exact component={Home} props={authStatus} />
             <UnauthenticatedRoute path="/login" exact component={Login} props={authStatus} />
